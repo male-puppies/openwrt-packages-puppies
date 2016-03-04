@@ -29,6 +29,13 @@ config NGINX_FLV
 		Provides the ability to seek within FLV (Flash) files using time-based offsets.
 	default n
 
+config NGINX_LUA
+	bool
+	prompt "Enable LUA module"
+	help
+		Enable support for LUA scripts.
+	default n
+
 config NGINX_STUB_STATUS
 	bool
 	prompt "Enable stub status module"

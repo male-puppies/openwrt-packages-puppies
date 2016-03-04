@@ -26,6 +26,7 @@ PKG_CONFIG_DEPENDS := \
 	CONFIG_NGINX_SSL \
 	CONFIG_NGINX_DAV \
 	CONFIG_NGINX_FLV \
+	CONFIG_NGINX_LUA \
 	CONFIG_NGINX_STUB_STATUS \
 	CONFIG_NGINX_HTTP_CHARSET \
 	CONFIG_NGINX_HTTP_GZIP \
@@ -64,7 +65,7 @@ define Package/nginx
   SUBMENU:=Web Servers/Proxies
   TITLE:=Nginx web server
   URL:=http://nginx.org/
-  DEPENDS:=+NGINX_PCRE:libpcre +(NGINX_SSL||NGINX_HTTP_CACHE||NGINX_HTTP_AUTH_BASIC):libopenssl +NGINX_HTTP_GZIP:zlib +libpthread
+  DEPENDS:=+NGINX_PCRE:libpcre +(NGINX_SSL||NGINX_HTTP_CACHE||NGINX_HTTP_AUTH_BASIC):libopenssl +NGINX_HTTP_GZIP:zlib +libpthread +NGINX_LUA:liblua
   MENU:=1
 endef
 
@@ -102,6 +103,9 @@ ifeq ($(CONFIG_NGINX_SSL),y)
 endif
 ifeq ($(CONFIG_NGINX_DAV),y)
   ADDITIONAL_MODULES += --with-http_dav_module
+endif
+ifeq ($(CONFIG_NGINX_LUA),y)
+  ADDITIONAL_MODULES += --add-module=$(PKG_BUILD_DIR)/lua-nginx
 endif
 ifneq ($(CONFIG_NGINX_HTTP_CACHE),y)
   ADDITIONAL_MODULES += --without-http-cache
@@ -187,6 +191,7 @@ endif
 
 define Build/Configure
 	( cd $(PKG_BUILD_DIR) ; \
+		$(if $(CONFIG_NGINX_LUA),LUA_INC=$(STAGING_DIR)/usr/include LUA_LIB=$(STAGING_DIR)/usr/lib) \
 		./configure \
 			--crossbuild=Linux::$(ARCH) \
 			--prefix=/usr \
@@ -224,7 +229,22 @@ endef
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
+	$(if $(CONFIG_NGINX_LUA),$(call Prepare/lua-nginx))
 	$(if $(CONFIG_NGINX_NAXSI),$(call Prepare/nginx-naxsi))
+endef
+
+define Download/lua-nginx
+	VERSION:=d3ab0edd45bffe1b9a36abdf5bff544de436ccee
+	SUBDIR:=lua-nginx
+	FILE:=lua-nginx-module-$(PKG_VERSION)-$$(VERSION).tar.gz
+	URL:=https://github.com/chaoslawful/lua-nginx-module.git
+	PROTO:=git
+endef
+
+define Prepare/lua-nginx
+	$(eval $(call Download,lua-nginx))
+	gzip -dc $(DL_DIR)/$(FILE) | tar -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
+	$(call PatchDir,$(PKG_BUILD_DIR),./patches-lua-nginx)
 endef
 
 define Download/nginx-naxsi
