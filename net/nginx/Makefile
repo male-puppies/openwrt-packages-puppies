@@ -90,6 +90,7 @@ ifeq ($(CONFIG_NGINX_NAXSI),y)
   ADDITIONAL_MODULES += --add-module=$(PKG_BUILD_DIR)/nginx-naxsi/naxsi_src
 endif
 ifeq ($(CONFIG_NGINX_LUA),y)
+  ADDITIONAL_MODULES += --add-module=$(PKG_BUILD_DIR)/ngx_devel_kit
   ADDITIONAL_MODULES += --add-module=$(PKG_BUILD_DIR)/lua-nginx
 endif
 ifeq ($(CONFIG_IPV6),y)
@@ -193,7 +194,7 @@ ifneq ($(CONFIG_NGINX_HTTP_UPSTREAM_KEEPALIVE),y)
   ADDITIONAL_MODULES += --without-http_upstream_keepalive_module
 endif
 
-TARGET_CFLAGS += -fvisibility=hidden -ffunction-sections -fdata-sections -DNGX_LUA_NO_BY_LUA_BLOCK
+TARGET_CFLAGS += -fvisibility=hidden -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
 
 define Build/Configure
@@ -237,7 +238,35 @@ endef
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	$(if $(CONFIG_NGINX_NAXSI),$(call Prepare/nginx-naxsi))
+	$(if $(CONFIG_NGINX_LUA),$(call Prepare/ngx_devel_kit))
 	$(if $(CONFIG_NGINX_LUA),$(call Prepare/lua-nginx))
+endef
+
+define Download/lua-nginx
+	VERSION:=3b4a96363b07bc2af93f2bf8e94e0af3d667bece
+	SUBDIR:=lua-nginx
+	FILE:=lua-nginx-module-$(PKG_VERSION)-$$(VERSION).tar.gz
+	URL:=https://github.com/openresty/lua-nginx-module.git
+	PROTO:=git
+endef
+
+define Prepare/lua-nginx
+	$(eval $(call Download,lua-nginx))
+	gzip -dc $(DL_DIR)/$(FILE) | tar -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
+	$(call PatchDir,$(PKG_BUILD_DIR),./patches-lua-nginx)
+endef
+
+define Download/ngx_devel_kit
+	VERSION:=e443262071e759c047492be60ec7e2d73c5b57ec
+	SUBDIR:=ngx_devel_kit
+	FILE:=ngx_devel_kit-$(PKG_VERSION)-$$(VERSION).tar.gz
+	URL:=https://github.com/simpl/ngx_devel_kit.git
+	PROTO:=git
+endef
+
+define Prepare/ngx_devel_kit
+	$(eval $(call Download,ngx_devel_kit))
+	gzip -dc $(DL_DIR)/$(FILE) | tar -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
 endef
 
 define Download/nginx-naxsi
