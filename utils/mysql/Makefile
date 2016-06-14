@@ -70,7 +70,6 @@ CONFIGURE_ARGS += \
 	--enable-thread-safe-client \
 	--disable-assembler \
 	--with-pthread \
-	--with-innodb \
 	--with-server \
 	--without-mysqlmanager \
 	--with-mysqld-user=root \
