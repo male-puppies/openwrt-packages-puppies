@@ -384,6 +384,15 @@ mwan3_track()
 		config_get up $1 up 5
 
 		[ -x /usr/sbin/mwan3track ] && /usr/sbin/mwan3track $1 $2 $reliability $count $timeout $interval $down $up $track_ips &
+	else
+		config_get reliability $1 reliability 1
+		config_get count $1 count 1
+		config_get timeout $1 timeout 4
+		config_get interval $1 interval 10
+		config_get down $1 down 5
+		config_get up $1 up 5
+
+		[ -x /usr/sbin/mwan3track_gw ] && /usr/sbin/mwan3track_gw $1 $2 $reliability $count $timeout $interval $down $up &
 	fi
 }
 

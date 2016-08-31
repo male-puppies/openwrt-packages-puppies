@@ -1,6 +1,6 @@
 #!/bin/sh
 
-[ -z "$9" ] && echo "Error: should not be started manually" && exit 0
+[ -z "$8" ] && echo "Error: should not be started manually" && exit 0
 
 if [ -e /var/run/mwan3track-$1.pid ] ; then
 	kill $(cat /var/run/mwan3track-$1.pid) &> /dev/null
@@ -16,8 +16,15 @@ lost=0
 
 while true; do
 
-	up_count=`echo -n "$track_ips" | wc -w`
-	test $up_count -gt $3 && up_count=$3
+	track_gw=`ip r | grep default | grep " "$2" " | awk '{print $3}'`
+	track_ips="$track_gw $track_gw"
+	up_count=1
+	test $3 -ge 2 && {
+		up_count=$3
+		for i in `seq 2 $up_count`; do
+			track_ips="$track_ips $track_gw"
+		done
+	}
 
 	for track_ip in $track_ips; do
 		ping -I $2 -c $4 -W $5 -q $track_ip &> /dev/null
@@ -28,7 +35,7 @@ while true; do
 		fi
 	done
 
-	if [ $host_up_count -lt $up_count ]; then
+	if [ $host_up_count -lt $up_count ] || ! test -n "$track_gw"; then
 		let score--
 
 		if [ $score -lt $8 ]; then score=0 ; fi
