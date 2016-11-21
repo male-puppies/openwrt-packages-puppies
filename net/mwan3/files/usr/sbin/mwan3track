@@ -14,9 +14,25 @@ track_ips=$(echo $* | cut -d ' ' -f 9-99)
 host_up_count=0
 lost=0
 
+need_gw=0
+track_ips_old=$track_ips
+track_ips=""
+for track_ip in $track_ips_old; do
+	if [ x$track_ip = xgateway ]; then
+		need_gw=1
+	else
+		track_ips="$track_ips $track_ip"
+	fi
+done
+
 while true; do
 
-	for track_ip in $track_ips; do
+	track_gw=""
+	[ x$need_gw = x1 ] && {
+		track_gw=`ip r | grep default | grep " "$2" " | awk '{print $3}' | grep '[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*'`
+	}
+
+	for track_ip in $track_gw $track_ips; do
 		ping -I $2 -c $4 -W $5 -q $track_ip &> /dev/null
 		if [ $? -eq 0 ]; then
 			let host_up_count++
