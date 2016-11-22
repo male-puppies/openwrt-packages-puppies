@@ -1,0 +1,22 @@
+diff --git a/src/plugin.c b/src/plugin.c
+index b443162..6db38ad 100644
+--- a/src/plugin.c
++++ b/src/plugin.c
+@@ -65,7 +65,7 @@ static int seen_devnam[2] = {0, 0};
+ static char *pppoe_reqd_mac = NULL;
+ 
+ /* From sys-linux.c in pppd -- MUST FIX THIS! */
+-extern int new_style_driver;
++// extern int new_style_driver;
+ 
+ char *pppd_pppoe_service = NULL;
+ static char *acName = NULL;
+@@ -460,7 +460,7 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
+ void
+ plugin_init(void)
+ {
+-    if (!ppp_available() && !new_style_driver) {
++    if (!ppp_available()) {
+ 	fatal("Linux kernel does not support PPPoE -- are you running 2.4.x?");
+     }
+ 
