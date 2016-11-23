@@ -38,6 +38,7 @@ pppoe_instance() {
 		append OPTIONS "-S $service_name"
 	    done
 	    append OPTIONS "-I $interface"
+	    append OPTIONS "-k"
 	    [ -n "$maxsesssionsperpeer" ] && append OPTIONS "-x $maxsesssionsperpeer"
 	    [ -n "$localip" ] && append OPTIONS "-L $localip"
 	    [ -n "$firstremoteip" ] && append OPTIONS "-R $firstremoteip"
