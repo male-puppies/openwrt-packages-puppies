@@ -37,6 +37,8 @@ pppoe_instance() {
 	    for service_name in $service_names; do
 		append OPTIONS "-S $service_name"
 	    done
+	    # fixup interface -> maped
+	    interface=`uci get network.$interface.ifname`
 	    append OPTIONS "-I $interface"
 	    append OPTIONS "-k"
 	    [ -n "$maxsesssionsperpeer" ] && append OPTIONS "-x $maxsesssionsperpeer"
