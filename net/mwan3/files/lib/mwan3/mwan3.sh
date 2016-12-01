@@ -7,6 +7,15 @@ IPT4="/usr/sbin/iptables -t mangle -w"
 IPT6="/usr/sbin/ip6tables -t mangle -w"
 LOG="/usr/bin/logger -t mwan3 -p"
 
+fake_ip6tables() {
+	return 0
+}
+ipv6_disabled=0
+test -x /usr/sbin/ip6tables || {
+	IPT6=fake_ip6tables
+	ipv6_disabled=1
+}
+
 mwan3_get_iface_id()
 {
 	local _tmp _iface _iface_count
@@ -42,19 +51,23 @@ mwan3_set_connected_iptables()
 	$IPS swap mwan3_connected_v4_temp mwan3_connected_v4
 	$IPS destroy mwan3_connected_v4_temp
 
-	$IPS -! create mwan3_connected_v6 hash:net family inet6
-	$IPS create mwan3_connected_v6_temp hash:net family inet6
+	[ x$ipv6_disabled = x1 ] && {
+		$IPS -! create mwan3_connected_v6 hash:net family inet6
+		$IPS create mwan3_connected_v6_temp hash:net family inet6
 
-	for connected_network_v6 in $($IP6 route | awk '{print $1}' | egrep '([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])'); do
-		$IPS -! add mwan3_connected_v6_temp $connected_network_v6
-	done
+		for connected_network_v6 in $($IP6 route | awk '{print $1}' | egrep '([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])'); do
+			$IPS -! add mwan3_connected_v6_temp $connected_network_v6
+		done
 
-	$IPS swap mwan3_connected_v6_temp mwan3_connected_v6
-	$IPS destroy mwan3_connected_v6_temp
+		$IPS swap mwan3_connected_v6_temp mwan3_connected_v6
+		$IPS destroy mwan3_connected_v6_temp
+	}
 
 	$IPS -! create mwan3_connected list:set
 	$IPS -! add mwan3_connected mwan3_connected_v4
-	$IPS -! add mwan3_connected mwan3_connected_v6
+	[ x$ipv6_disabled = x1 ] && {
+		$IPS -! add mwan3_connected mwan3_connected_v6
+	}
 }
 
 mwan3_set_general_rules()
@@ -163,41 +176,43 @@ mwan3_create_iface_iptables()
 		$IPT4 -A mwan3_ifaces_out -m mark --mark 0x0/0xff00 -j mwan3_iface_out_$1
 	fi
 
-	if [ "$family" == "ipv6" ]; then
+	[ x$ipv6_disabled = x1 ] && {
+		if [ "$family" == "ipv6" ]; then
 
-		network_get_ipaddr6 src_ipv6 $1
+			network_get_ipaddr6 src_ipv6 $1
 
-		$IPS -! create mwan3_connected_v6 hash:net family inet6
+			$IPS -! create mwan3_connected_v6 hash:net family inet6
 
-		if ! $IPT6 -S mwan3_ifaces_in &> /dev/null; then
-			$IPT6 -N mwan3_ifaces_in
+			if ! $IPT6 -S mwan3_ifaces_in &> /dev/null; then
+				$IPT6 -N mwan3_ifaces_in
+			fi
+
+			if ! $IPT6 -S mwan3_ifaces_out &> /dev/null; then
+				$IPT6 -N mwan3_ifaces_out
+			fi
+
+			if ! $IPT6 -S mwan3_iface_in_$1 &> /dev/null; then
+				$IPT6 -N mwan3_iface_in_$1
+			fi
+
+			if ! $IPT6 -S mwan3_iface_out_$1 &> /dev/null; then
+				$IPT6 -N mwan3_iface_out_$1
+			fi
+
+			$IPT6 -F mwan3_iface_in_$1
+			$IPT6 -A mwan3_iface_in_$1 -i $2 -m set --match-set mwan3_connected_v6 src -m mark --mark 0x0/0xff00 -m comment --comment "default" -j MARK --set-xmark 0xff00/0xff00
+			$IPT6 -A mwan3_iface_in_$1 -i $2 -m mark --mark 0x0/0xff00 -m comment --comment "$1" -j MARK --set-xmark $(($id*256))/0xff00
+
+			$IPT6 -D mwan3_ifaces_in -m mark --mark 0x0/0xff00 -j mwan3_iface_in_$1 &> /dev/null
+			$IPT6 -A mwan3_ifaces_in -m mark --mark 0x0/0xff00 -j mwan3_iface_in_$1
+
+			$IPT6 -F mwan3_iface_out_$1
+			$IPT6 -A mwan3_iface_out_$1 -s $src_ipv6 -m mark --mark 0x0/0xff00 -m comment --comment "$1" -j MARK --set-xmark $(($id*256))/0xff00
+
+			$IPT6 -D mwan3_ifaces_out -m mark --mark 0x0/0xff00 -j mwan3_iface_out_$1 &> /dev/null
+			$IPT6 -A mwan3_ifaces_out -m mark --mark 0x0/0xff00 -j mwan3_iface_out_$1
 		fi
-
-		if ! $IPT6 -S mwan3_ifaces_out &> /dev/null; then
-			$IPT6 -N mwan3_ifaces_out
-		fi
-
-		if ! $IPT6 -S mwan3_iface_in_$1 &> /dev/null; then
-			$IPT6 -N mwan3_iface_in_$1
-		fi
-
-		if ! $IPT6 -S mwan3_iface_out_$1 &> /dev/null; then
-			$IPT6 -N mwan3_iface_out_$1
-		fi
-
-		$IPT6 -F mwan3_iface_in_$1
-		$IPT6 -A mwan3_iface_in_$1 -i $2 -m set --match-set mwan3_connected_v6 src -m mark --mark 0x0/0xff00 -m comment --comment "default" -j MARK --set-xmark 0xff00/0xff00
-		$IPT6 -A mwan3_iface_in_$1 -i $2 -m mark --mark 0x0/0xff00 -m comment --comment "$1" -j MARK --set-xmark $(($id*256))/0xff00
-
-		$IPT6 -D mwan3_ifaces_in -m mark --mark 0x0/0xff00 -j mwan3_iface_in_$1 &> /dev/null
-		$IPT6 -A mwan3_ifaces_in -m mark --mark 0x0/0xff00 -j mwan3_iface_in_$1
-
-		$IPT6 -F mwan3_iface_out_$1
-		$IPT6 -A mwan3_iface_out_$1 -s $src_ipv6 -m mark --mark 0x0/0xff00 -m comment --comment "$1" -j MARK --set-xmark $(($id*256))/0xff00
-
-		$IPT6 -D mwan3_ifaces_out -m mark --mark 0x0/0xff00 -j mwan3_iface_out_$1 &> /dev/null
-		$IPT6 -A mwan3_ifaces_out -m mark --mark 0x0/0xff00 -j mwan3_iface_out_$1
-	fi
+	}
 }
 
 mwan3_delete_iface_iptables()
@@ -215,16 +230,18 @@ mwan3_delete_iface_iptables()
 		$IPT4 -X mwan3_iface_out_$1 &> /dev/null
 	fi
 
-	if [ "$family" == "ipv6" ]; then
+	[ x$ipv6_disabled = x1 ] && {
+		if [ "$family" == "ipv6" ]; then
 
-		$IPT6 -D mwan3_ifaces_in -m mark --mark 0x0/0xff00 -j mwan3_iface_in_$1 &> /dev/null
-		$IPT6 -F mwan3_iface_in_$1 &> /dev/null
-		$IPT6 -X mwan3_iface_in_$1 &> /dev/null
+			$IPT6 -D mwan3_ifaces_in -m mark --mark 0x0/0xff00 -j mwan3_iface_in_$1 &> /dev/null
+			$IPT6 -F mwan3_iface_in_$1 &> /dev/null
+			$IPT6 -X mwan3_iface_in_$1 &> /dev/null
 
-		$IPT6 -D mwan3_ifaces_out -m mark --mark 0x0/0xff00 -j mwan3_iface_out_$1 &> /dev/null
-		$IPT6 -F mwan3_iface_out_$1 &> /dev/null
-		$IPT6 -X mwan3_iface_out_$1 &> /dev/null
-	fi
+			$IPT6 -D mwan3_ifaces_out -m mark --mark 0x0/0xff00 -j mwan3_iface_out_$1 &> /dev/null
+			$IPT6 -F mwan3_iface_out_$1 &> /dev/null
+			$IPT6 -X mwan3_iface_out_$1 &> /dev/null
+		fi
+	}
 }
 
 mwan3_create_iface_route()
@@ -245,14 +262,16 @@ mwan3_create_iface_route()
 		$IP4 route add table $id default $route_args
 	fi
 
-	if [ "$family" == "ipv6" ]; then
+	[ x$ipv6_disabled = x1 ] && {
+		if [ "$family" == "ipv6" ]; then
 
-		network_get_gateway6 route_args $1
-		route_args="via $route_args dev $2"
+			network_get_gateway6 route_args $1
+			route_args="via $route_args dev $2"
 
-		$IP6 route flush table $id
-		$IP6 route add table $id default $route_args
-	fi
+			$IP6 route flush table $id
+			$IP6 route add table $id default $route_args
+		fi
+	}
 }
 
 mwan3_delete_iface_route()
@@ -268,9 +287,11 @@ mwan3_delete_iface_route()
 		$IP4 route flush table $id
 	fi
 
-	if [ "$family" == "ipv6" ]; then
-		$IP6 route flush table $id
-	fi
+	[ x$ipv6_disabled = x1 ] && {
+		if [ "$family" == "ipv6" ]; then
+			$IP6 route flush table $id
+		fi
+	}
 }
 
 mwan3_create_iface_rules()
@@ -296,19 +317,21 @@ mwan3_create_iface_rules()
 		$IP4 rule add pref $(($id+2000)) fwmark $(($id*256))/0xff00 lookup $id
 	fi
 
-	if [ "$family" == "ipv6" ]; then
+	[ x$ipv6_disabled = x1 ] && {
+		if [ "$family" == "ipv6" ]; then
 
-		while [ -n "$($IP6 rule list | awk '$1 == "'$(($id+1000)):'"')" ]; do
-			$IP6 rule del pref $(($id+1000))
-		done
+			while [ -n "$($IP6 rule list | awk '$1 == "'$(($id+1000)):'"')" ]; do
+				$IP6 rule del pref $(($id+1000))
+			done
 
-		while [ -n "$($IP6 rule list | awk '$1 == "'$(($id+2000)):'"')" ]; do
-			$IP6 rule del pref $(($id+2000))
-		done
+			while [ -n "$($IP6 rule list | awk '$1 == "'$(($id+2000)):'"')" ]; do
+				$IP6 rule del pref $(($id+2000))
+			done
 
-		$IP6 rule add pref $(($id+1000)) iif $2 lookup main
-		$IP6 rule add pref $(($id+2000)) fwmark $(($id*256))/0xff00 lookup $id
-	fi
+			$IP6 rule add pref $(($id+1000)) iif $2 lookup main
+			$IP6 rule add pref $(($id+2000)) fwmark $(($id*256))/0xff00 lookup $id
+		fi
+	}
 }
 
 mwan3_delete_iface_rules()
@@ -331,16 +354,18 @@ mwan3_delete_iface_rules()
 		done
 	fi
 
-	if [ "$family" == "ipv6" ]; then
+	[ x$ipv6_disabled = x1 ] && {
+		if [ "$family" == "ipv6" ]; then
 
-		while [ -n "$($IP6 rule list | awk '$1 == "'$(($id+1000)):'"')" ]; do
-			$IP6 rule del pref $(($id+1000))
-		done
+			while [ -n "$($IP6 rule list | awk '$1 == "'$(($id+1000)):'"')" ]; do
+				$IP6 rule del pref $(($id+1000))
+			done
 
-		while [ -n "$($IP6 rule list | awk '$1 == "'$(($id+2000)):'"')" ]; do
-			$IP6 rule del pref $(($id+2000))
-		done
-	fi
+			while [ -n "$($IP6 rule list | awk '$1 == "'$(($id+2000)):'"')" ]; do
+				$IP6 rule del pref $(($id+2000))
+			done
+		fi
+	}
 }
 
 mwan3_delete_iface_ipset_entries()
@@ -434,38 +459,40 @@ mwan3_set_policy()
 		fi
 	fi
 
-	if [ "$family" == "ipv6" ]; then
+	[ x$ipv6_disabled = x1 ] && {
+		if [ "$family" == "ipv6" ]; then
 
-		if [ -n "$($IP6 route list table $id)" ]; then
-			if [ "$metric" -lt "$lowest_metric_v6" ]; then
+			if [ -n "$($IP6 route list table $id)" ]; then
+				if [ "$metric" -lt "$lowest_metric_v6" ]; then
 
-				total_weight_v6=$weight
-				$IPT6 -F mwan3_policy_$policy
-				$IPT6 -A mwan3_policy_$policy -m mark --mark 0x0/0xff00 -m comment --comment "$iface $weight $weight" -j MARK --set-xmark $(($id*256))/0xff00
+					total_weight_v6=$weight
+					$IPT6 -F mwan3_policy_$policy
+					$IPT6 -A mwan3_policy_$policy -m mark --mark 0x0/0xff00 -m comment --comment "$iface $weight $weight" -j MARK --set-xmark $(($id*256))/0xff00
 
-				lowest_metric_v6=$metric
+					lowest_metric_v6=$metric
 
-			elif [ "$metric" -eq "$lowest_metric_v6" ]; then
+				elif [ "$metric" -eq "$lowest_metric_v6" ]; then
 
-				total_weight_v6=$(($total_weight_v6+$weight))
-				probability=$(($weight*1000/$total_weight_v6))
+					total_weight_v6=$(($total_weight_v6+$weight))
+					probability=$(($weight*1000/$total_weight_v6))
 
-				if [ "$probability" -lt 10 ]; then
-					probability="0.00$probability"
-				elif [ $probability -lt 100 ]; then
-					probability="0.0$probability"
-				elif [ $probability -lt 1000 ]; then
-					probability="0.$probability"
-				else
-					probability="1"
+					if [ "$probability" -lt 10 ]; then
+						probability="0.00$probability"
+					elif [ $probability -lt 100 ]; then
+						probability="0.0$probability"
+					elif [ $probability -lt 1000 ]; then
+						probability="0.$probability"
+					else
+						probability="1"
+					fi
+
+					probability="-m statistic --mode random --probability $probability"
+
+					$IPT6 -I mwan3_policy_$policy -m mark --mark 0x0/0xff00 $probability -m comment --comment "$iface $weight $total_weight_v6" -j MARK --set-xmark $(($id*256))/0xff00
 				fi
-
-				probability="-m statistic --mode random --probability $probability"
-
-				$IPT6 -I mwan3_policy_$policy -m mark --mark 0x0/0xff00 $probability -m comment --comment "$iface $weight $total_weight_v6" -j MARK --set-xmark $(($id*256))/0xff00
 			fi
 		fi
-	fi
+	}
 }
 
 mwan3_create_policies_iptables()
