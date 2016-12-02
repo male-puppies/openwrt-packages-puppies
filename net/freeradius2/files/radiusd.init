@@ -5,7 +5,7 @@
 
 USE_PROCD=1
 
-START=50
+START=60
 
 NAME=radiusd
 PROG=/usr/sbin/radiusd
