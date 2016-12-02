@@ -579,7 +579,7 @@ endef
 
 define Package/freeradius2-utils/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	for f in radclient radeapclient radwho; do \
+	for f in radtest radcrypt radclient radeapclient radwho; do \
 		$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/$$$${f} $(1)/usr/bin/ ; \
 	done
 endef

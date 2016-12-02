@@ -45,7 +45,7 @@ pppoe_instance() {
 	    [ -n "$localip" ] && append OPTIONS "-L $localip"
 	    [ -n "$firstremoteip" ] && append OPTIONS "-R $firstremoteip"
 	    [ -n "maxsessions" ] && append OPTIONS "-N $maxsessions"
-	    [ -n "optionsfile" ] && append OPTIONS "-O $optionsfile"
+	    [ -n "optionsfile" ] && [ -f "$optionsfile" ] && append OPTIONS "-O $optionsfile"
 	    [ "$randomsession" = "1" ] && append OPTIONS "-r"
 	    [ "$unit" = "1" ] && append OPTIONS "-u"
 	    [ -n "$offset" ] && append OPTIONS "-o $offset"
