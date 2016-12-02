@@ -524,7 +524,7 @@ define Package/freeradius3/install
 	$(INSTALL_DIR) $(1)/etc/freeradius3/policy.d
 	$(INSTALL_DIR) $(1)/etc/freeradius3/sites-available
 	$(INSTALL_DIR) $(1)/etc/freeradius3/sites-enabled
-	for f in clients.conf radiusd.conf proxy.conf; do \
+	for f in proxy.conf; do \
 		$(CP) $(PKG_INSTALL_DIR)/etc/freeradius3/$$$${f} $(1)/etc/freeradius3/ ; \
 	done
 	for f in accounting filter; do \
