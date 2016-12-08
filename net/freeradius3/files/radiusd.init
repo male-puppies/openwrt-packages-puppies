@@ -5,7 +5,7 @@
 
 USE_PROCD=1
 
-START=60
+START=85
 
 NAME=radiusd
 PROG=/usr/sbin/radiusd
@@ -17,6 +17,10 @@ start_service()
 	mkdir -p /var/log
 	mkdir -p /var/run
 	mkdir -p /var/db/radacct
+
+	[ -f /etc/freeradius3/mods-enabled/sql ] || {
+		cd /etc/freeradius3/mods-enabled && ln -s ../mods-available/sql ./
+	}
 
 	procd_open_instance
 	procd_set_param command $PROG -f
