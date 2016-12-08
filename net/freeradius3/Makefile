@@ -357,6 +357,35 @@ define Package/freeradius3-mod-radutmp/conffiles
 /etc/freeradius3/mods-enabled/sradutmp
 endef
 
+define Package/freeradius3-mod-sql
+  $(call Package/freeradius3/Default)
+  DEPENDS:=freeradius3
+  TITLE:=SQL support
+endef
+
+define Package/freeradius3-mod-sql/conffiles
+/etc/freeradius3/mods-config/sql
+/etc/freeradius3/mods-available/sql
+endef
+
+define Package/freeradius3-mod-sql-mysql
+  $(call Package/freeradius3/Default)
+  DEPENDS:=freeradius3-mod-sql +libmysqlclient-r
+  TITLE:=SQL-mysql-driver
+endef
+
+define Package/freeradius3-mod-sqlcounter
+  $(call Package/freeradius3/Default)
+  DEPENDS:=freeradius3-mod-sql
+  TITLE:=Generic SQL Counter module
+endef
+
+define Package/freeradius3-mod-sqlippool
+  $(call Package/freeradius3/Default)
+  DEPENDS:=freeradius3-mod-sql
+  TITLE:=Generic SQL IP-Pool module
+endef
+
 define Package/freeradius3-mod-unix
   $(call Package/freeradius3/Default)
   DEPENDS:=freeradius3
@@ -402,7 +431,6 @@ CONFIGURE_ARGS+= \
 	--without-rlm_eap_tnc \
 	--without-rlm_example \
 	--without-rlm_idn \
-	--without-rlm_ippool \
 	--without-rlm_krb5 \
 	--without-rlm_ldap \
 	--without-rlm_opendirectory \
@@ -415,19 +443,16 @@ CONFIGURE_ARGS+= \
 	--without-rlm_ruby \
 	--without-rlm_securid \
 	--without-rlm_smsotp \
-	--without-rlm_sql \
 	--without-rlm_sql_db2 \
 	--without-rlm_sql_firebird \
 	--without-rlm_sql_freetds \
 	--without-rlm_sql_iodbc \
-	--without-rlm_sql_mysql \
 	--without-rlm_sql_oracle \
 	--without-rlm_sql_postgresql \
 	--without-rlm_sql_sqlite \
 	--without-rlm_sql_unixodbc \
-	--without-rlm_sqlcounter \
 	--without-rlm_sqlhpwippool \
-	--without-rlm_sqlippool \
+	--without-rlm_ippool \
 	--without-rlm_unbound \
 	--without-rlm_yubikey \
 
@@ -473,6 +498,25 @@ ifneq ($(SDK)$(CONFIG_PACKAGE_freeradius3-mod-radutmp),)
   CONFIGURE_ARGS+= --with-rlm_radutmp
 else
   CONFIGURE_ARGS+= --without-rlm_radutmp
+endif
+
+ifneq ($(SDK)$(CONFIG_PACKAGE_freeradius3-mod-sql),)
+  CONFIGURE_ARGS+= --with-rlm_sql \
+				   --with-rlm_sql-include-dir="$(STAGING_DIR)/usr/include" \
+				   --with-rlm_sql-lib-dir="$(STAGING_DIR)/usr/lib"
+else
+  CONFIGURE_ARGS+= --without-rlm_sql
+endif
+
+ifneq ($(SDK)$(CONFIG_PACKAGE_freeradius3-mod-sql-mysql),)
+  CONFIGURE_ARGS+= \
+		--with-rlm_sql_mysql \
+		--with-mysql-include-dir="$(STAGING_DIR)/usr/include" \
+		--with-mysql-lib-dir="$(STAGING_DIR)/usr/lib/mysql"
+  CONFIGURE_LIBS+= -lz
+  CONFIGURE_VARS+= ac_cv_lib_mysqlclient_r_mysql_init=yes
+else
+  CONFIGURE_ARGS+= --without-rlm_sql_mysql
 endif
 
 ifneq ($(SDK)$(CONFIG_PACKAGE_freeradius3-mod-unix),)
@@ -601,6 +645,10 @@ $(eval $(call BuildPlugin,freeradius3-mod-pap,rlm_pap,))
 $(eval $(call BuildPlugin,freeradius3-mod-passwd,rlm_passwd,))
 $(eval $(call BuildPlugin,freeradius3-mod-preprocess,rlm_preprocess,))
 $(eval $(call BuildPlugin,freeradius3-mod-radutmp,rlm_radutmp,))
+$(eval $(call BuildPlugin,freeradius3-mod-sql,rlm_sql,))
+$(eval $(call BuildPlugin,freeradius3-mod-sql-mysql,rlm_sql_mysql,))
+$(eval $(call BuildPlugin,freeradius3-mod-sqlippool,rlm_sqlippool,))
+$(eval $(call BuildPlugin,freeradius3-mod-sqlcounter,rlm_sqlcounter,))
 $(eval $(call BuildPlugin,freeradius3-mod-realm,rlm_realm,))
 $(eval $(call BuildPlugin,freeradius3-mod-unix,rlm_unix,))
 $(eval $(call BuildPackage,freeradius3-utils))
