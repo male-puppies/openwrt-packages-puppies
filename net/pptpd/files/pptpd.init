@@ -21,7 +21,8 @@ validate_pptpd_section() {
 		'localip:string' \
 		'remoteip:string' \
 		'mppe:list(string):required no40 no56 stateless' \
-		'logwtmp:uinteger'
+		'logwtmp:uinteger' \
+		'msdns:string'
 }
 
 setup_login() {
@@ -37,7 +38,7 @@ setup_login() {
 }
 
 setup_config() {
-	local enabled localip remoteip mppe
+	local enabled localip remoteip mppe msdns
 
 	validate_pptpd_section "${1}" || {
 		echo "validation failed"
@@ -53,6 +54,11 @@ setup_config() {
 	[ -n "$localip" ] && echo "localip  $localip" >> $CONFIG
 	[ -n "$remoteip" ] && echo "remoteip  $remoteip" >> $CONFIG
 	[ "x$logwtmp" = x1 ] && echo "logwtmp" >> $CONFIG
+	[ -n "$msdns" ] && {
+		for w in $msdns; do
+			echo ms-dns $w >>$OPTIONS_PPTP
+		done
+	}
 
 	echo "mppe $(echo $mppe | sed -e 's/\s/,/g')" >> $OPTIONS_PPTP
 
