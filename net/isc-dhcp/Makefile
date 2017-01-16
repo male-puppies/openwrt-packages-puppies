@@ -8,22 +8,21 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=isc-dhcp
-UPSTREAM_NAME:=dhcp
 PKG_VERSION:=4.3.3
-PKG_RELEASE:=1
+PKG_RELEASE:=d9084dbd9ea90fdfabfa1e976109abcc40cf0d36
 
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE).tar.gz
+PKG_SOURCE_URL:=https://github.com/male-puppies/isc-dhcp.git
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_VERSION:=$(PKG_RELEASE)
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_LICENSE:=BSD-3-Clause
-PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=Antony Antony <antony@phenome.org>
-
-PKG_SOURCE:=$(UPSTREAM_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=ftp://ftp.isc.org/isc/dhcp/$(PKG_VERSION)
-PKG_MD5SUM:=c5577b09c9017cdd319a11ff6364268e
 
 PKG_FIXUP:=autoreconf
 PKG_BUILD_PARALLEL:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(UPSTREAM_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -32,7 +31,7 @@ define Package/isc-dhcp/Default
   CATEGORY:=Network
   SUBMENU:=IP Addresses and Names
   TITLE:=ISC's DHCP
-  URL:=https://www.isc.org/software/dhcp
+  URL:=https://github.com/male-puppies/isc-dhcp.git
 endef
 
 define Package/isc-dhcp-relay-ipv4
