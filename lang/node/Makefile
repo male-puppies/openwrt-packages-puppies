@@ -8,22 +8,22 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=node
-PKG_VERSION:=v4.4.5
+PKG_VERSION:=v6.10.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=node-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=http://nodejs.org/dist/${PKG_VERSION}
-PKG_MD5SUM:=376140907bbe362f36065a30af04f020
+PKG_MD5SUM:=77a890e27501a50da6c9286e512db0ac
 
-HOST_BUILD_DEPENDS:=python/host
-PKG_BUILD_DEPENDS:=python/host
+HOST_BUILD_DEPENDS:=python/host icu/host
+PKG_BUILD_DEPENDS:=python/host icu/host
 PKG_INSTALL:=1
 PKG_USE_MIPS16:=0
 
 HOST_BUILD_PARALLEL:=1
 PKG_BUILD_PARALLEL:=1
 
-PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_MAINTAINER:=Chen Minqiang <ptpt52@gmail.com>
 PKG_LICENSE:=
 
 include $(INCLUDE_DIR)/host-build.mk
@@ -52,6 +52,7 @@ MAKE_VARS += \
 CONFIGURE_ARGS= \
 	--dest-cpu=$(CPU) \
 	--dest-os=linux \
+	--without-intl \
 	--without-snapshot \
 	--shared-zlib \
 	--shared-openssl \
