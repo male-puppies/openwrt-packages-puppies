@@ -32,6 +32,8 @@ mwan3_set_connected_iptables()
 {
 	local connected_network_v4 connected_network_v6
 
+	$IPS -! create mwan3_connected list:set
+
 	$IPS -! create mwan3_connected_v4 hash:net
 	$IPS create mwan3_connected_v4_temp hash:net
 
@@ -48,7 +50,10 @@ mwan3_set_connected_iptables()
 	$IPS swap mwan3_connected_v4_temp mwan3_connected_v4
 	$IPS destroy mwan3_connected_v4_temp
 
+	$IPS -! add mwan3_connected mwan3_connected_v4
+
 	test -n "$IP6" || return 0
+
 	$IPS -! create mwan3_connected_v6 hash:net family inet6
 	$IPS create mwan3_connected_v6_temp hash:net family inet6
 
@@ -59,8 +64,6 @@ mwan3_set_connected_iptables()
 	$IPS swap mwan3_connected_v6_temp mwan3_connected_v6
 	$IPS destroy mwan3_connected_v6_temp
 
-	$IPS -! create mwan3_connected list:set
-	$IPS -! add mwan3_connected mwan3_connected_v4
 	$IPS -! add mwan3_connected mwan3_connected_v6
 }
 
@@ -719,7 +722,8 @@ mwan3_report_iface_status()
 		IPT="$IPT4"
 	fi
 
-	if [ "$family" == "ipv6" ] && test -n "$IPT6"; then
+	if [ "$family" == "ipv6" ]; then
+		test -n "$IP6" || return 0
 		IP="$IP6"
 		IPT="$IPT6"
 	fi
