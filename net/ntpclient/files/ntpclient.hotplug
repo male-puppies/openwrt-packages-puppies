@@ -28,7 +28,7 @@ check_server() {
 	}
 
 	[ -z "$hostname" ] && return
-	$NTPC -c 1 -p ${port:-123} -i 2 -h $hostname > /dev/null && { SERVER=$hostname; PORT=${port:-123}; }
+	$NTPC -c 1 -p ${port:-125} -i 2 -h $hostname > /dev/null && { SERVER=$hostname; PORT=${port:-125}; }
 }
 
 set_drift() {
