@@ -1,6 +1,6 @@
 #!/bin/sh
 
-[ -x /usr/bin/ip ] || exit 4
+[ -x /usr/bin/ip ] || [ -x /usr/sbin/ip ] || exit 4
 [ -x /usr/sbin/ipset ] || exit 5
 [ -x /usr/sbin/iptables ] || exit 6
 #[ -x /usr/sbin/ip6tables ] || exit 7
@@ -44,7 +44,6 @@ ifdown()
 
 	if [ -e /var/run/mwan3track-$1.pid ] ; then
 		kill $(cat /var/run/mwan3track-$1.pid)
-		rm /var/run/mwan3track-$1.pid
 	fi
 }
 
@@ -129,10 +128,9 @@ stop()
 	local ipset route rule table IP IPT
 
 	killall mwan3track &> /dev/null
-	rm /var/run/mwan3track-* &> /dev/null
 
 	for IP in "$IP4" "$IP6"; do
-
+		test -n "$IP6" || continue
 		for route in $($IP route list table all | sed 's/.*table \([^ ]*\) .*/\1/' |  awk '{print $1}' | awk '{for(i=1;i<=NF;i++) if($i+0>0) if($i+0<255) {print;break}}'); do
 			$IP route flush table $route &> /dev/null
 		done
@@ -143,7 +141,7 @@ stop()
 	done
 
 	for IPT in "$IPT4" "$IPT6"; do
-
+		test -n "$IPT" || continue
 		$IPT -D PREROUTING -j mwan3_hook &> /dev/null
 		$IPT -D OUTPUT -j mwan3_hook &> /dev/null
 
