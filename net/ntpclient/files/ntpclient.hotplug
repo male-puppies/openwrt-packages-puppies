@@ -10,6 +10,7 @@ unset COUNT
 unset INTERFACE_GLOBAL
 
 NTPC=`which ntpclient`
+LOG="/usr/bin/logger -t mwan3 -p"
 
 check_server() {
 	local hostname
@@ -39,6 +40,7 @@ set_drift() {
 start_ntpclient() {
 	config_foreach set_drift ntpdrift
 	config_foreach check_server ntpserver
+	[ -z "$SERVER" ] && $LOG warn "no server avaliable, please check ntpclient's config  or network"
 	[ -z "$SERVER" ] && exit 0
 	logger starting ntpclient
 	$NTPC ${COUNT:+-c $COUNT} ${INTERVAL:+-i $INTERVAL} -s -l -D -p $PORT -h $SERVER 2> /dev/null
@@ -73,6 +75,6 @@ case "${ACTION:-ifup}" in
 		[ -z "$NTP_RUNNING" ] && start_ntpclient 
 	;;
 	ifdown)
-		[ -n "$NTP_RUNNING" ] && stop_ntpclient 
+		[ -n "$NTP_RUNNING" ] && stop_ntpclient && start_ntpclient
 	;;
 esac
