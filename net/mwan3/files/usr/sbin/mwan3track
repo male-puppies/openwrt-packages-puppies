@@ -9,7 +9,7 @@ DEVICE=""
 IFDOWN_EVENT=0
 
 clean_up() {
-	$LOG notice "Stopping mwan3track for interface \"${INTERFACE}\""
+	$LOG notice "Stopping mwan3track for interface \"${INTERFACE}\", which pid=$$"
 	rm "/var/run/mwan3track-${INTERFACE}.pid" &> /dev/null
 	rm -rf "/var/run/mwan3track/${INTERFACE}" &> /dev/null
 	if [ -z "$(ls -A "/var/run/mwan3track")" ]; then
@@ -26,7 +26,7 @@ if_down() {
 main() {
 	local reliability count timeout interval failure_interval
 	local recovery_interval down up size
-
+	$LOG  info   "Starting mwan3track for interface $1, which pid=$$"
 	[ -z "$3" ] && echo "Error: should not be started manually" && exit 0
 
 	INTERFACE=$1

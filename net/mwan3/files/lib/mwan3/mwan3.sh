@@ -394,18 +394,38 @@ mwan3_delete_iface_ipset_entries()
 	done
 }
 
+custom_kill_wait()
+{
+	local tick=5 i=0
+	local pid=$1 pname=$2 status
+
+	while [ $i -lt ${tick} ]; do
+		#check if process is running, if running wait
+		status="$(pgrep -f ${pname} | grep "${pid}")"
+		if [ "${status}" == "" ]; then
+			break
+		fi
+
+		sleep 1
+		i=`expr $i + 1`
+	done
+	$LOG notice "mwan3track_kill_wait:pid=$1 pname=$2 cost=$i "
+}
+
 mwan3_track()
 {
-	local track_ip track_ips
-
+	local track_ip track_ips pid
 	mwan3_list_track_ips()
 	{
 		track_ips="$1 $track_ips"
 	}
 	config_list_foreach $1 track_ip mwan3_list_track_ips
 
+	$LOG notice "mwan3_track called by $PPID  for device \"${1}\""
 	if [ -e /var/run/mwan3track-$1.pid ] ; then
-		kill $(cat /var/run/mwan3track-$1.pid) &> /dev/null
+		pid="$(cat "/var/run/mwan3track-${1}.pid")"
+		kill ${pid} & > /dev/null
+		custom_kill_wait ${pid} "mwan3track"
 	fi
 
 	if [ -n "$track_ips" ]; then
@@ -416,10 +436,11 @@ mwan3_track()
 mwan3_track_signal()
 {
 	local pid status
-
+	$LOG notice "mwan3_track_signal called by $PPID  for device \"${1}\""
 	if [ -f "/var/run/mwan3track-${1}.pid" ]; then
 		pid="$(cat "/var/run/mwan3track-${1}.pid")"
 		status="$(pgrep -f mwan3track | grep "${pid}")"
+		$LOG notice "mwan3_track_signal kill -USR1 ${pid} for device \"${1}\""
 		if [ "${status}" != "" ]; then
 			kill -USR1 "${pid}"
 		else
