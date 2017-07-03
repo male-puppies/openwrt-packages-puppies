@@ -396,7 +396,7 @@ mwan3_delete_iface_ipset_entries()
 
 custom_kill_wait()
 {
-	local tick=5 i=0
+	local tick=13 i=0
 	local pid=$1 pname=$2 status
 
 	while [ $i -lt ${tick} ]; do
@@ -409,7 +409,7 @@ custom_kill_wait()
 		sleep 1
 		i=`expr $i + 1`
 	done
-	$LOG notice "mwan3track_kill_wait:pid=$1 pname=$2 cost=$i "
+	$LOG notice "mwan3track_kill_wait:pid=$1 pname=$2 cost=$i status=${status}"
 }
 
 mwan3_track()
