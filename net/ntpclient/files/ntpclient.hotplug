@@ -73,6 +73,6 @@ case "${ACTION:-ifup}" in
 		[ -z "$NTP_RUNNING" ] && start_ntpclient 
 	;;
 	ifdown)
-		[ -n "$NTP_RUNNING" ] && stop_ntpclient 
+		[ -n "$NTP_RUNNING" ] && stop_ntpclient && start_ntpclient
 	;;
 esac
