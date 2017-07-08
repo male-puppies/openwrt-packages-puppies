@@ -9,12 +9,17 @@ DEVICE=""
 IFDOWN_EVENT=0
 
 clean_up() {
-	$LOG notice "Stopping mwan3track for interface \"${INTERFACE}\", which pid=$$"
-	rm "/var/run/mwan3track-${INTERFACE}.pid" &> /dev/null
-	rm -rf "/var/run/mwan3track/${INTERFACE}" &> /dev/null
+	local pid="$(cat "/var/run/mwan3track-${INTERFACE}.pid" 2>/dev/null)"
+
+	if [ "$pid" == "$$" ];then
+		rm "/var/run/mwan3track-${INTERFACE}.pid" &> /dev/null
+		rm -rf "/var/run/mwan3track/${INTERFACE}" &> /dev/null
+	fi
+
 	if [ -z "$(ls -A "/var/run/mwan3track")" ]; then
 		rm -rf "/var/run/mwan3track"
 	fi
+	$LOG notice "Stopping mwan3track for interface \"${INTERFACE}\", which cur_pid=$$ vs file_pid=$pid "
 	exit 0
 }
 
@@ -32,6 +37,10 @@ main() {
 	INTERFACE=$1
 	DEVICE=$2
 	echo "$$" > /var/run/mwan3track-$1.pid
+	if [ -d /var/run/mwan3track/$1 ];then
+		rm -rf /var/run/mwan3track/$1
+		$LOG warn "cleanup for $1: rm -rf /var/run/mwan3track/$1"
+	fi
 	mkdir -p /var/run/mwan3track/$1
 	trap clean_up SIGINT SIGTERM
 	trap if_down SIGUSR1
