@@ -66,7 +66,7 @@ load_settings() {
 config_load ntpclient
 config_foreach load_settings ntpclient
 
-NTP_RUNNING=`ps  | grep $NTPC | grep -v grep`
+NTP_RUNNING=`ps -aux | grep $NTPC | grep -v grep`
 
 case "${ACTION:-ifup}" in
 	ifup)
