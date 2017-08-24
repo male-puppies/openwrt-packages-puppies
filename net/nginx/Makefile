@@ -92,6 +92,7 @@ endif
 ifeq ($(CONFIG_NGINX_LUA),y)
   ADDITIONAL_MODULES += --add-module=$(PKG_BUILD_DIR)/ngx_devel_kit
   ADDITIONAL_MODULES += --add-module=$(PKG_BUILD_DIR)/lua-nginx
+  ADDITIONAL_MODULES += --add-module=$(PKG_BUILD_DIR)/ngx_http_substitutions_filter_module
 endif
 ifeq ($(CONFIG_IPV6),y)
   ADDITIONAL_MODULES += --with-ipv6
@@ -240,6 +241,7 @@ define Build/Prepare
 	$(if $(CONFIG_NGINX_NAXSI),$(call Prepare/nginx-naxsi))
 	$(if $(CONFIG_NGINX_LUA),$(call Prepare/ngx_devel_kit))
 	$(if $(CONFIG_NGINX_LUA),$(call Prepare/lua-nginx))
+	$(if $(CONFIG_NGINX_LUA),$(call Prepare/ngx_http_substitutions_filter_module))
 endef
 
 define Download/lua-nginx
@@ -266,6 +268,19 @@ endef
 
 define Prepare/ngx_devel_kit
 	$(eval $(call Download,ngx_devel_kit))
+	gzip -dc $(DL_DIR)/$(FILE) | tar -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
+endef
+
+define Download/ngx_http_substitutions_filter_module
+	VERSION:=bc58cb11844bc42735bbaef7085ea86ace46d05b
+	SUBDIR:=ngx_http_substitutions_filter_module
+	FILE:=ngx_devel_kit-$(PKG_VERSION)-$$(VERSION).tar.gz
+	URL:=git://github.com/yaoweibin/ngx_http_substitutions_filter_module.git
+	PROTO:=git
+endef
+
+define Prepare/ngx_http_substitutions_filter_module
+	$(eval $(call Download,ngx_http_substitutions_filter_module))
 	gzip -dc $(DL_DIR)/$(FILE) | tar -C $(PKG_BUILD_DIR) $(TAR_OPTIONS)
 endef
 
