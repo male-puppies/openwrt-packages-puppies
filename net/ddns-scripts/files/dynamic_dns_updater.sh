@@ -333,6 +333,7 @@ ERR_LAST=$?
 write_log 6 "Starting main loop at $(eval $DATE_PROG)"
 get_local_ip LOCAL_IP
 send_update "$LOCAL_IP"
+echo $LOCAL_IP > /tmp/ddns_local_ip
 echo "FIRST" > $CONNECTFILE
 while : ; do
 
